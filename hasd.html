@@ -1,0 +1,383 @@
+<!doctype html>
+<html lang="kk">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>JavaScript арқылы Әмбебап Веб-Интерфейстер Құру</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card: #111827;
+      --text: #e5e7eb;
+      --muted: #9ca3af;
+      --accent: #22c55e;
+      --accent-2: #38bdf8;
+      --border: #1f2937;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      color: var(--text);
+      background: radial-gradient(1200px 600px at 10% -10%, #0b1220, transparent),
+                  radial-gradient(1000px 500px at 110% -20%, #082b1c, transparent),
+                  var(--bg);
+      min-height: 100dvh;
+      line-height: 1.5;
+    }
+    header {
+      position: sticky; top: 0; z-index: 20;
+      background: rgba(15,23,42,0.7);
+      backdrop-filter: blur(8px);
+      border-bottom: 1px solid var(--border);
+    }
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 0 16px;
+    }
+    .nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 56px;
+    }
+    .brand { font-weight: 700; letter-spacing: .2px; }
+    .brand .tag { color: var(--accent); }
+    .menu-btn {
+      display: none;
+      background: none; border: 1px solid var(--border); color: var(--text);
+      padding: 6px 10px; border-radius: 8px; cursor: pointer;
+    }
+    nav ul {
+      list-style: none; margin: 0; padding: 0;
+      display: flex; gap: 16px;
+    }
+    nav a {
+      color: var(--text); text-decoration: none; font-size: 14px;
+      padding: 8px 10px; border-radius: 8px;
+    }
+    nav a:hover { background: #0b1220; }
+
+    main { padding: 24px 0 56px; }
+    .grid {
+      display: grid;
+      grid-template-columns: 1.4fr .6fr;
+      gap: 20px;
+    }
+    .card {
+      background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+    }
+    h1 { font-size: 28px; margin: 10px 0 16px; }
+    h2 { font-size: 20px; margin: 18px 0 10px; }
+    p, li, code, pre { font-size: 14px; }
+    .muted { color: var(--muted); }
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+    pre {
+      background: #0b1220;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px;
+      overflow: auto;
+    }
+    code { color: #d1fae5; }
+    .kpi {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
+    }
+    .kpi .item { background: #0b1220; border: 1px solid var(--border); border-radius: 12px; padding: 10px; }
+    .label { color: var(--muted); font-size: 12px; }
+    .value { font-size: 18px; font-weight: 700; }
+
+    /* Demo areas */
+    .demo {
+      display: grid; gap: 14px;
+    }
+    .resizable-box {
+      background: linear-gradient(135deg, rgba(34,197,94,.15), rgba(56,189,248,.15));
+      border: 1px dashed #1e293b;
+      border-radius: 12px;
+      height: 120px;
+      display: grid; place-items: center;
+      color: #c7f9cc;
+    }
+    .status {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 8px; margin-top: 6px;
+    }
+    .status .pill {
+      background: #0b1220; border: 1px solid var(--border);
+      border-radius: 10px; padding: 8px; font-size: 12px;
+    }
+    .animate-on-view {
+      opacity: 0; transform: translateY(10px); transition: .45s ease;
+    }
+    .animate-on-view.visible {
+      opacity: 1; transform: translateY(0);
+    }
+
+    /* Mobile layout toggle via JS (.mobile-layout on body) */
+    body.mobile-layout nav ul {
+      display: grid; gap: 8px; padding: 8px 0;
+    }
+    @media (max-width: 900px) {
+      .grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 768px) {
+      .menu-btn { display: inline-block; }
+      nav ul {
+        display: none;
+        grid-template-columns: 1fr;
+      }
+      nav ul.open { display: grid; }
+    }
+  </style>
+</head>
+<body>
+  <noscript>
+    <div style="background:#7f1d1d;color:#fee2e2;padding:10px;text-align:center">
+      JavaScript өшірілген. Негізгі контент қолжетімді, бірақ кейбір жақсартулар көрсетілмейді.
+    </div>
+  </noscript>
+
+  <header>
+    <div class="container nav">
+      <div class="brand">Universal Web UI <span class="tag">JS</span></div>
+      <button id="menuBtn" class="menu-btn" aria-expanded="false" aria-controls="topNav">☰ Мәзір</button>
+      <nav>
+        <ul id="topNav" role="menu">
+          <li><a href="#intro">Кіріспе</a></li>
+          <li><a href="#responsive">Адаптивтілік</a></li>
+          <li><a href="#matchmedia">matchMedia</a></li>
+          <li><a href="#cross">Кроссбраузерлік</a></li>
+          <li><a href="#best">Үздік тәжірибелер</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <section id="intro" class="card animate-on-view">
+      <span class="badge">💡 Кіріспе және Мақсат</span>
+      <h1>JavaScript арқылы Әмбебап Веб-Интерфейстер Құру</h1>
+      <p>Мақсаты: JavaScript көмегімен веб-сайттың әртүрлі құрылғылар мен браузерлерде мінсіз жұмыс істеуін қамтамасыз ету әдістерін қарастыру.</p>
+      <div class="kpi">
+        <div class="item">
+          <div class="label">Неліктен маңызды?</div>
+          <div class="value">Біркелкі UX</div>
+          <div class="muted">Құрылғыға қарамастан</div>
+        </div>
+        <div class="item">
+          <div class="label">Қолжетімділік</div>
+          <div class="value">Барлығына</div>
+          <div class="muted">Мазмұнға қолжетімді</div>
+        </div>
+        <div class="item">
+          <div class="label">Тексеру</div>
+          <div class="value">BrowserStack</div>
+          <div class="muted">Көпплатформалық</div>
+        </div>
+      </div>
+    </section>
+
+    <section id="responsive" class="grid">
+      <div class="card animate-on-view">
+        <span class="badge">📱 Адаптивтілік: JS-тің қосымша рөлі</span>
+        <h2>JS пайдалы құралдары</h2>
+        <ul>
+          <li><code>window.innerWidth</code> — viewport енін алу, мысалы hamburger мәзірді ауыстыру.</li>
+          <li><code>element.getBoundingClientRect()</code> — элемент көрінгенде анимацияны іске қосу.</li>
+          <li><code>ResizeObserver</code> — элемент өлшемін бақылау.</li>
+        </ul>
+        <div class="demo">
+          <div class="resizable-box" id="box">
+            <div>
+              <div id="boxSize">— × —</div>
+              <small class="muted">Бұл блок өлшемі өзгерсе, JS жаңартады</small>
+            </div>
+          </div>
+          <div class="status">
+            <div class="pill">Viewport ені: <strong id="vw">—</strong></div>
+            <div class="pill">Макет: <strong id="layoutMode">desktop</strong></div>
+          </div>
+        </div>
+      </div>
+      <div class="card animate-on-view">
+        <span class="badge">🔎 Көрінімділік</span>
+        <h2>getBoundingClientRect() демо</h2>
+        <p class="muted">Элемент viewport-қа кіргенде <code>.visible</code> класы қосылады.</p>
+        <pre><code>// Элемент көрінген-болмағанын тексеру
+function isInView(el) {
+  const r = el.getBoundingClientRect();
+  return r.top &lt;= (window.innerHeight || document.documentElement.clientHeight)
+      &amp;&amp; r.bottom &gt;= 0;
+}</code></pre>
+      </div>
+    </section>
+
+    <section id="matchmedia" class="card animate-on-view">
+      <span class="badge">📏 matchMedia() API</span>
+      <h2>Медиа сұрауларды JS-та басқару</h2>
+      <pre><code>const query = window.matchMedia('(max-width: 768px)');
+
+function handleMediaChange(e) {
+  if (e.matches) {
+    document.body.classList.add('mobile-layout');   // мобильді логика
+  } else {
+    document.body.classList.remove('mobile-layout'); // үстелдік логика
+  }
+}
+
+if (query.addEventListener) {
+  query.addEventListener('change', handleMediaChange);
+} else {
+  // Ескі браузерлер
+  query.addListener(handleMediaChange);
+}
+handleMediaChange(query);</code></pre>
+    </section>
+
+    <section id="cross" class="card animate-on-view">
+      <span class="badge">🌐 Кроссбраузерлік</span>
+      <h2>Feature detection, полифиллдер, транспиляция</h2>
+      <pre><code>// 1) Feature detection (UA емес)
+if ('fetch' in window) {
+  fetch('/data').catch(() =&gt; {});
+} else {
+  // Қарапайым XHR баламасы
+  var xhr = new XMLHttpRequest();
+  xhr.open('GET', '/data', true);
+  xhr.send();
+}
+
+// 2) Полифилл мысалы (Array.prototype.includes)
+if (!Array.prototype.includes) {
+  Object.defineProperty(Array.prototype, 'includes', {
+    value: function (search, fromIndex) {
+      return this.indexOf(search, fromIndex) !== -1;
+    }
+  });
+}
+
+// 3) Транспиляция
+// Babel құралымен ES6+ кодын ES5-ке ауыстырыңыз (құрастыру кезеңінде).</code></pre>
+    </section>
+
+    <section id="best" class="card animate-on-view">
+      <span class="badge">🏆 Үздік тәжірибелер</span>
+      <ul>
+        <li>Прогрессивті жақсарту: негізгі функция JS-сіз де қолжетімді болсын.</li>
+        <li>Фреймворктар: React/Vue/Angular көптеген үйлесім мәселелерін шешеді.</li>
+        <li>Көпбраузерлік тестілеу: BrowserStack, Sauce Labs, Playwright.</li>
+      </ul>
+      <div class="status">
+        <div class="pill">JS күйі: <strong id="jsStatus">жүктелуде…</strong></div>
+        <div class="pill">ResizeObserver: <strong id="roStatus">—</strong></div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    // --- Hamburger menu ---
+    (function() {
+      var btn = document.getElementById('menuBtn');
+      var nav = document.getElementById('topNav');
+      if (!btn || !nav) return;
+      btn.addEventListener('click', function() {
+        var open = nav.classList.toggle('open');
+        btn.setAttribute('aria-expanded', String(open));
+      });
+    })();
+
+    // --- matchMedia: desktop/mobile layout toggle ---
+    (function() {
+      var mq = window.matchMedia('(max-width: 768px)');
+      function handle(e) {
+        document.body.classList.toggle('mobile-layout', !!e.matches);
+        document.getElementById('layoutMode').textContent = e.matches ? 'mobile' : 'desktop';
+      }
+      if (mq.addEventListener) mq.addEventListener('change', handle);
+      else if (mq.addListener) mq.addListener(handle); // older
+      handle(mq);
+    })();
+
+    // --- Viewport width indicator ---
+    (function() {
+      var vwEl = document.getElementById('vw');
+      function update() { vwEl.textContent = window.innerWidth + 'px'; }
+      window.addEventListener('resize', update, { passive: true });
+      update();
+    })();
+
+    // --- ResizeObserver demo with fallback ---
+    (function() {
+      var box = document.getElementById('box');
+      var label = document.getElementById('boxSize');
+      var roStatus = document.getElementById('roStatus');
+      function writeSize() {
+        var r = box.getBoundingClientRect();
+        label.textContent = Math.round(r.width) + ' × ' + Math.round(r.height);
+      }
+      if ('ResizeObserver' in window) {
+        roStatus.textContent = 'қолдайды';
+        var ro = new ResizeObserver(function() { writeSize(); });
+        ro.observe(box);
+      } else {
+        roStatus.textContent = 'жоқ (fallback)';
+        window.addEventListener('resize', writeSize, { passive: true });
+      }
+      writeSize();
+    })();
+
+    // --- getBoundingClientRect-based visibility animation ---
+    (function() {
+      var items = Array.prototype.slice.call(document.querySelectorAll('.animate-on-view'));
+      function isInView(el) {
+        var r = el.getBoundingClientRect();
+        var vh = window.innerHeight || document.documentElement.clientHeight;
+        return r.top <= vh && r.bottom >= 0;
+      }
+      function tick() { items.forEach(function(el){ if (isInView(el)) el.classList.add('visible'); }); }
+      document.addEventListener('scroll', tick, { passive: true });
+      window.addEventListener('resize', tick, { passive: true });
+      window.addEventListener('load', tick);
+      tick();
+    })();
+
+    // --- Feature detection + simple polyfill example ---
+    (function() {
+      // Array.includes polyfill (simple)
+      if (!Array.prototype.includes) {
+        Object.defineProperty(Array.prototype, 'includes', {
+          value: function (search, fromIndex) {
+            return this.indexOf(search, fromIndex || 0) !== -1;
+          }
+        });
+      }
+
+      // fetch fallback example (no-op endpoint)
+      var jsStatus = document.getElementById('jsStatus');
+      if ('fetch' in window) {
+        jsStatus.textContent = 'заманауи API';
+      } else {
+        jsStatus.textContent = 'XHR fallback';
+        try {
+          var xhr = new XMLHttpRequest();
+          xhr.open('GET', '/', true);
+          xhr.send();
+        } catch(e) {}
+      }
+    })();
+  </script>
+</body>
+</html>
